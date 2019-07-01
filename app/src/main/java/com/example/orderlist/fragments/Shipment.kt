@@ -1,24 +1,21 @@
-package com.example.orderlist
+package com.example.orderlist.fragments
 
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.orderlist.Supplier.orderlist
-import kotlinx.android.synthetic.main.fragment_order_description.*
-
+import com.example.orderlist.models.Supplier.orderlist
+import kotlinx.android.synthetic.main.fragment_shipment.*
+import kotlinx.android.synthetic.main.item_order.view.*
+import com.example.orderlist.MainActivityViewModel
+import com.example.orderlist.models.Order
+import com.example.orderlist.R
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -28,17 +25,19 @@ private const val ARG_PARAM2 = "param2"
 /**
  * A simple [Fragment] subclass.
  * Activities that contain this fragment must implement the
- * [OrderDescription.OnFragmentInteractionListener] interface
+ * [Shipment.OnFragmentInteractionListener] interface
  * to handle interaction events.
- * Use the [OrderDescription.newInstance] factory method to
+ * Use the [Shipment.newInstance] factory method to
  * create an instance of this fragment.
  *
  */
-class OrderDescription : Fragment() {
+class Shipment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
     private var listener: OnFragmentInteractionListener? = null
+
+    private var orderAdapter : OrderAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,71 +52,79 @@ class OrderDescription : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_order_description, container, false)
+        return inflater.inflate(R.layout.fragment_shipment, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val mainActivityViewModel : MainActivityViewModel = ViewModelProviders.of(activity!!).get(MainActivityViewModel::class.java!!)
-        val pos = mainActivityViewModel.getValue()
+        val layoutManager = LinearLayoutManager(activity)
+        //recyclerView = findViewById(R.id.rv_images)
+        rv_order.setHasFixedSize(true)
+        rv_order.layoutManager = layoutManager as RecyclerView.LayoutManager?
+        orderAdapter = OrderAdapter(activity!!, orderlist)
+    }
 
-        val orders = orderlist
+    override fun onStart() {
+        super.onStart()
+        rv_order.adapter = orderAdapter
+    }
 
+    private inner class OrderAdapter (val context : Context, val orders : Array <Order>) : RecyclerView.Adapter<OrderAdapter.MyViewHolder>() {
 
+        lateinit var mainActivityViewModel : MainActivityViewModel
 
-        tvCompanyName.text = orders[pos].comapany_name
-        tvPickup.text = orders[pos].pickup
-        tvDestinationCompany.text = orders[pos].destination_company
-        tvDropoff.text = orders[pos].dropoff
-        tvBigTruck.text = orders[pos].bigTruck.toString()
-        tvSmallTruck.text = orders[pos].smallTruck.toString()
-        tvDate.text = orders[pos].date.toString()
-        tvTime.text = orders[pos].time.toString()
-
-        etBigTruckCost.addTextChangedListener(object : TextWatcher {
-
-            override fun afterTextChanged(s: Editable) {}
-
-            override fun beforeTextChanged(s: CharSequence, start: Int,
-                                           count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int,
-                                       before: Int, count: Int) {
-                var s1 = etSmallTruckCost.text.toString().toIntOrNull()
-                var s2 = etBigTruckCost.text.toString().toIntOrNull()
-
-                if(s1 != null && s2 != null)
-                    tvTotalCost.text = (s1.toInt() + s2.toInt()).toString()
-                else
-                    tvTotalCost.text = "0"
-            }
-        })
-
-        etSmallTruckCost.addTextChangedListener(object : TextWatcher {
-
-            override fun afterTextChanged(s: Editable) {}
-
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-
-                var s1 = etSmallTruckCost.text.toString().toIntOrNull()
-                var s2 = etBigTruckCost.text.toString().toIntOrNull()
-
-                if(s1 != null && s2 != null)
-                    tvTotalCost.text = (s1.toInt() + s2.toInt()).toString()
-                else
-                    tvTotalCost.text = "0"
-            }
-        })
-
-
-        buttonBid.setOnClickListener {
-            Toast.makeText(activity!!, "Successfully Bidded", Toast.LENGTH_LONG)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+            val view = LayoutInflater.from(context).inflate(R.layout.item_order, parent, false)
+            return MyViewHolder(view)
         }
 
+        override fun getItemCount(): Int {
+            return orders.size
+        }
+
+        override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+            val order = orders[position]
+            holder.setData(order, position)
+        }
+
+        inner class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+            var currentOrder: Order? = null
+            var currentPosition: Int = 0
+
+            init {
+
+                itemView.setOnClickListener {
+
+                    currentOrder?.let {
+
+                        mainActivityViewModel = ViewModelProviders.of(activity!!).get(MainActivityViewModel::class.java!!)
+                        //Log.d("Photo URL = ", photo.url)
+                        mainActivityViewModel!!.setValue(currentPosition)
+
+                        val manager = fragmentManager
+                        val transaction = manager!!.beginTransaction()
+                        val fragment = OrderDescription()
+                        transaction.replace(R.id.fragment, fragment)
+                        transaction.addToBackStack(null)
+                        transaction.commit()
+
+                    }
+                }
+            }
+
+            fun setData(order: Order?, pos: Int) {
+                order?.let {
+                    itemView.tv_company_name.text = order.comapany_name
+                    itemView.tv_pickup.text = order.pickup
+                    itemView.tv_dropoff.text = order.dropoff
+                }
+
+                this.currentOrder = order
+                this.currentPosition = pos
+            }
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -162,12 +169,12 @@ class OrderDescription : Fragment() {
          *
          * @param param1 Parameter 1.
          * @param param2 Parameter 2.
-         * @return A new instance of fragment OrderDescription.
+         * @return A new instance of fragment Shipment.
          */
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
-            OrderDescription().apply {
+            Shipment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)

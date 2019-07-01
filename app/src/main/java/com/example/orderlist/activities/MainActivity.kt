@@ -1,22 +1,10 @@
-package com.example.orderlist
+package com.example.orderlist.activities
 
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity;
-import android.view.Menu
-import android.view.MenuItem
-import androidx.fragment.app.FragmentManager
-import android.content.Context
-import android.net.Uri
-import android.util.Log
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import androidx.annotation.Nullable
-import androidx.appcompat.widget.Toolbar
-import androidx.fragment.app.FragmentActivity
+import com.example.orderlist.fragments.Ongoing
+import com.example.orderlist.R
+import com.example.orderlist.fragments.Shipment
 
 import kotlinx.android.synthetic.main.activity_main.*
 
